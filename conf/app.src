@@ -1,7 +1,7 @@
-SOURCE_URL=url of app's source
-SOURCE_SUM=sha256 checksum
+SOURCE_URL=https://github.com/tsightler/ring-mqtt/archive/refs/tags/v5.0.5.zip
+SOURCE_SUM=e817adb92a3f62086bf6b2ab527d0569317cfd6741557994c27872329dd2072f
 SOURCE_SUM_PRG=sha256sum
-SOURCE_FORMAT=tar.gz
+SOURCE_FORMAT=zip
 SOURCE_IN_SUBDIR=true
 SOURCE_FILENAME=
 SOURCE_EXTRACT=true

@@ -24,24 +24,31 @@ ynh_abort_if_errors
 # RETRIEVE ARGUMENTS FROM THE MANIFEST
 #=================================================
 
-domain=$YNH_APP_ARG_DOMAIN
-path_url=$YNH_APP_ARG_PATH
-is_public=$YNH_APP_ARG_IS_PUBLIC
-language=$YNH_APP_ARG_LANGUAGE
-admin=$YNH_APP_ARG_ADMIN
-password=$YNH_APP_ARG_PASSWORD
-
-### If it's a multi-instance app, meaning it can be installed several times independently
-### The id of the app as stated in the manifest is available as $YNH_APP_ID
-### The instance number is available as $YNH_APP_INSTANCE_NUMBER (equals "1", "2"...)
-### The app instance name is available as $YNH_APP_INSTANCE_NAME
-###    - the first time the app is installed, YNH_APP_INSTANCE_NAME = ynhexample
-###    - the second time the app is installed, YNH_APP_INSTANCE_NAME = ynhexample__2
-###    - ynhexample__{N} for the subsequent installations, with N=3,4...
-### The app instance name is probably what interests you most, since this is
-### guaranteed to be unique. This is a good unique identifier to define installation path,
-### db names...
+mosquittonumber=$YNH_APP_ARG_MOSQUITTONUMBER
+ringdisarm=$YNH_APP_ARG_RINGDISARM
 app=$YNH_APP_INSTANCE_NAME
+
+final_path=/opt/yunohost/$app
+
+if [ $mosquittonumber -eq "1" ]
+then
+	mosquitto_instance="mosquitto"
+else
+	mosquitto_instance="mosquitto__$mosquittonumber"
+fi
+
+mosquitto_config_path="/etc/$mosquitto_instance"
+# Check Synapse is installed or die early
+if [ ! -d $mosquitto_config_path ]
+then
+	ynh_die --message="Could not find $synapse_config_path config directory. Ensure that you installed Mosquitto first and that you entered a correct \"mosquitto instance number\""
+fi
+
+mqtt_user=$(ynh_app_setting_get --app $mosquitto_instance --key username)
+mqtt_pass=$(ynh_app_setting_get --app $mosquitto_instance --key password)
+mqtt_port=$(ynh_app_setting_get --app $mosquitto_instance --key port)
+log_path="/var/log/$app"
+
 
 #=================================================
 # CHECK IF THE APP CAN BE INSTALLED WITH THESE ARGS
@@ -58,21 +65,21 @@ ynh_script_progression --message="Validating installation parameters..." --weigh
 
 ### If the app uses NGINX as web server (written in HTML/PHP in most cases), the final path should be "/var/www/$app".
 ### If the app provides an internal web server (or uses another application server such as uWSGI), the final path should be "/opt/yunohost/$app"
-final_path=/var/www/$app
 test ! -e "$final_path" || ynh_die --message="This path already contains a folder"
 
 # Register (book) web path
-ynh_webpath_register --app=$app --domain=$domain --path_url=$path_url
 
 #=================================================
 # STORE SETTINGS FROM MANIFEST
 #=================================================
 ynh_script_progression --message="Storing installation settings..." --weight=1
 
-ynh_app_setting_set --app=$app --key=domain --value=$domain
-ynh_app_setting_set --app=$app --key=path --value=$path_url
-ynh_app_setting_set --app=$app --key=language --value=$language
-ynh_app_setting_set --app=$app --key=admin --value=$admin
+ynh_app_setting_set --app=$app --key=final_path --value=$final_path
+ynh_app_setting_set --app=$app --key=mqtt_user --value=$mqtt_user
+ynh_app_setting_set --app=$app --key=mqtt_pass --value=$mqtt_pass
+ynh_app_setting_set --app=$app --key=mqtt_port --value=$mqtt_port
+ynh_app_setting_set --app=$app --key=ring_disarm --value=$ringdisarm
+ynh_app_setting_set --app=$app --key=mosquitto_instance --value=$mosquitto_instance
 
 #=================================================
 # STANDARD MODIFICATIONS
@@ -87,7 +94,7 @@ ynh_script_progression --message="Finding an available port..." --weight=1
 ###		- Remove the section "CLOSE A PORT" in the remove script
 
 # Find an available port
-port=$(ynh_find_port --port=8095)
+port=$(ynh_find_port --port=55123)
 ynh_app_setting_set --app=$app --key=port --value=$port
 
 # Optional: Expose this port publicly
@@ -111,7 +118,9 @@ ynh_script_progression --message="Installing dependencies..." --weight=1
 ###		- As well as the section "REINSTALL DEPENDENCIES" in the restore script
 ###		- And the section "UPGRADE DEPENDENCIES" in the upgrade script
 
+ynh_install_nodejs --nodejs_version=$NODEJS_VERSION
 ynh_install_app_dependencies $pkg_dependencies
+
 
 #=================================================
 # CREATE DEDICATED USER
@@ -121,24 +130,24 @@ ynh_script_progression --message="Configuring system user..." --weight=1
 # Create a system user
 ynh_system_user_create --username=$app --home_dir="$final_path"
 
-#=================================================
-# CREATE A MYSQL DATABASE
-#=================================================
-ynh_script_progression --message="Creating a MySQL database..." --weight=1
+# #=================================================
+# # CREATE A MYSQL DATABASE
+# #=================================================
+# ynh_script_progression --message="Creating a MySQL database..." --weight=1
 
-### Use these lines if you need a database for the application.
-### `ynh_mysql_setup_db` will create a database, an associated user and a ramdom password.
-### The password will be stored as 'mysqlpwd' into the app settings,
-### and will be available as $db_pwd
-### If you're not using these lines:
-###		- Remove the section "BACKUP THE MYSQL DATABASE" in the backup script
-###		- Remove also the section "REMOVE THE MYSQL DATABASE" in the remove script
-###		- As well as the section "RESTORE THE MYSQL DATABASE" in the restore script
+# ### Use these lines if you need a database for the application.
+# ### `ynh_mysql_setup_db` will create a database, an associated user and a ramdom password.
+# ### The password will be stored as 'mysqlpwd' into the app settings,
+# ### and will be available as $db_pwd
+# ### If you're not using these lines:
+# ###		- Remove the section "BACKUP THE MYSQL DATABASE" in the backup script
+# ###		- Remove also the section "REMOVE THE MYSQL DATABASE" in the remove script
+# ###		- As well as the section "RESTORE THE MYSQL DATABASE" in the restore script
 
-db_name=$(ynh_sanitize_dbid --db_name=$app)
-db_user=$db_name
-ynh_app_setting_set --app=$app --key=db_name --value=$db_name
-ynh_mysql_setup_db --db_user=$db_user --db_name=$db_name
+# db_name=$(ynh_sanitize_dbid --db_name=$app)
+# db_user=$db_name
+# ynh_app_setting_set --app=$app --key=db_name --value=$db_name
+# ynh_mysql_setup_db --db_user=$db_user --db_name=$db_name
 
 #=================================================
 # DOWNLOAD, CHECK AND UNPACK SOURCE
@@ -161,70 +170,85 @@ ynh_setup_source --dest_dir="$final_path"
 # this will be treated as a security issue.
 chmod 750 "$final_path"
 chmod -R o-rwx "$final_path"
-chown -R $app:www-data "$final_path"
+chown -R $app:$app "$final_path"
 
 #=================================================
 # PHP-FPM CONFIGURATION
 #=================================================
-ynh_script_progression --message="Configuring PHP-FPM..." --weight=1
+# ynh_script_progression --message="Configuring PHP-FPM..." --weight=1
 
-### `ynh_add_fpm_config` is used to set up a PHP config.
-### You can remove it if your app doesn't use PHP.
-### `ynh_add_fpm_config` will use the files conf/php-fpm.conf
-### If you're not using these lines:
-###		- You can remove these files in conf/.
-###		- Remove the section "BACKUP THE PHP-FPM CONFIGURATION" in the backup script
-###		- Remove also the section "REMOVE PHP-FPM CONFIGURATION" in the remove script
-###		- As well as the section "RESTORE THE PHP-FPM CONFIGURATION" in the restore script
-###		  with the reload at the end of the script.
-###		- And the section "PHP-FPM CONFIGURATION" in the upgrade script
+# ### `ynh_add_fpm_config` is used to set up a PHP config.
+# ### You can remove it if your app doesn't use PHP.
+# ### `ynh_add_fpm_config` will use the files conf/php-fpm.conf
+# ### If you're not using these lines:
+# ###		- You can remove these files in conf/.
+# ###		- Remove the section "BACKUP THE PHP-FPM CONFIGURATION" in the backup script
+# ###		- Remove also the section "REMOVE PHP-FPM CONFIGURATION" in the remove script
+# ###		- As well as the section "RESTORE THE PHP-FPM CONFIGURATION" in the restore script
+# ###		  with the reload at the end of the script.
+# ###		- And the section "PHP-FPM CONFIGURATION" in the upgrade script
 
-# Create a dedicated PHP-FPM config
-ynh_add_fpm_config
+# # Create a dedicated PHP-FPM config
+# ynh_add_fpm_config
 
 #=================================================
 # NGINX CONFIGURATION
 #=================================================
-ynh_script_progression --message="Configuring NGINX web server..." --weight=1
+# ynh_script_progression --message="Configuring NGINX web server..." --weight=1
 
-### `ynh_add_nginx_config` will use the file conf/nginx.conf
+# ### `ynh_add_nginx_config` will use the file conf/nginx.conf
 
-# Create a dedicated NGINX config
-ynh_add_nginx_config
+# # Create a dedicated NGINX config
+# ynh_add_nginx_config
 
 #=================================================
 # SPECIFIC SETUP
 #=================================================
-# ...
+#=================================================
+# INSTALL NODE DEPENDENCIES
+#=================================================
+ynh_script_progression --message="Building Node dependencies..." --weight=30
+
+pushd "$final_path"
+	ynh_use_nodejs
+	ynh_exec_warn_less sudo -u $app env $ynh_node_load_PATH npm install
+popd
+
 #=================================================
 
-#=================================================
-# CREATE DATA DIRECTORY
-#=================================================
-ynh_script_progression --message="Creating a data directory..." --weight=1
+# INSTALL RTSP-SIMPLE-SERVER
+# TODO: https://github.com/aler9/rtsp-simple-server
+ynh_script_progression --message="Installing rtsp-simple-server" --weight=5
 
-### Use these lines if you need to create a directory to store "persistent files" for the application.
-### Usually this directory is used to store uploaded files or any file that won't be updated during 
-### an upgrade and that won't be deleted during app removal unless "--purge" option is used.
-### If you're not using these lines:
-###		- Remove the section "BACKUP THE DATA DIR" in the backup script
-###		- Remove the section "RESTORE THE DATA DIRECTORY" in the restore script
-###     - As well as the section "REMOVE DATA DIR" in the remove script
+arch=$(arch)
+case $arch in
 
-datadir=/home/yunohost.app/$app
-ynh_app_setting_set --app=$app --key=datadir --value=$datadir
+  x86_64)
+    wget "https://github.com/aler9/rtsp-simple-server/releases/download/v0.20.2/rtsp-simple-server_v0.20.2_linux_amd64.tar.gz"
+    ;;
 
-mkdir -p $datadir
+  aarch64)
+    wget "https://github.com/aler9/rtsp-simple-server/releases/download/v0.20.2/rtsp-simple-server_v0.20.2_linux_arm64v8.tar.gz"
+    ;;
 
-# FIXME: this should be managed by the core in the future
-# Here, as a packager, you may have to tweak the ownerhsip/permissions
-# such that the appropriate users (e.g. maybe www-data) can access
-# files in some cases.
-# But FOR THE LOVE OF GOD, do not allow r/x for "others" on the entire folder -
-# this will be treated as a security issue.
-chmod 750 "$datadir"
-chmod -R o-rwx "$datadir"
-chown -R $app:www-data "$datadir"
+  armv7l)
+    wget "https://github.com/aler9/rtsp-simple-server/releases/download/v0.20.2/rtsp-simple-server_v0.20.2_linux_armv7.tar.gz"
+    ;;
+
+  armv6l)
+    wget "https://github.com/aler9/rtsp-simple-server/releases/download/v0.20.2/rtsp-simple-server_v0.20.2_linux_armv6.tar.gz"
+    ;;
+
+  *)
+    echo "Architecture unsupported by RTSP-SIMPLE-SERVER"
+    exit 1
+    ;;
+esac
+
+tar -xvf rtsp-simple-server*.tar.gz
+chmod +x rtsp-simple-server
+mv rtsp-simple-server /usr/local/bin
+rm LICENSE rtsp-simple-server.yml
 
 #=================================================
 # ADD A CONFIGURATION
@@ -243,13 +267,18 @@ ynh_script_progression --message="Adding a configuration file..." --weight=1
 ###
 ### Check the documentation of `ynh_add_config` for more info.
 
-ynh_add_config --template="some_config_file" --destination="$final_path/some_config_file"
+ynh_add_config --template="configurator.js" --destination="$final_path/configurator.js"
+
+pushd "$final_path"
+	ynh_use_nodejs
+	ynh_exec_warn_less sudo -u $app env $ynh_node_load_PATH node configurator.js $mqtt_user $mqtt_pass $mqtt_port $ringdisarm > $final_path/config.json
+popd
 
 # FIXME: this should be handled by the core in the future
 # You may need to use chmod 600 instead of 400,
 # for example if the app is expected to be able to modify its own config
-chmod 400 "$final_path/some_config_file"
-chown $app:$app "$final_path/some_config_file"
+chmod 400 "$final_path/config.json"
+chown $app:$app "$final_path/config.json"
 
 ### For more complex cases where you want to replace stuff using regexes,
 ### you shoud rely on ynh_replace_string (which is basically a wrapper for sed)
@@ -274,47 +303,27 @@ ynh_script_progression --message="Configuring a systemd service..." --weight=1
 ###		- As well as the section "RESTORE SYSTEMD" in the restore script
 ###		- And the section "SETUP SYSTEMD" in the upgrade script
 
+# Create startup script
+ynh_add_config --template="run.sh" --destination="$final_path/run.sh"
+
+chmod 750 "$final_path/run.sh"
+chown "$app:$app" "$final_path/run.sh"
+
 # Create a dedicated systemd config
 ynh_add_systemd_config
 
+
 #=================================================
-# SETUP APPLICATION WITH CURL
+# CREATE LOG DIR
 #=================================================
 
-### Use these lines only if the app installation needs to be finalized through
-### web forms. We generally don't want to ask the final user,
-### so we're going to use curl to automatically fill the fields and submit the
-### forms.
+mkdir -p -m 700 "$log_path"
+chown $app:$app "$log_path"
 
-# Set the app as temporarily public for curl call
-ynh_script_progression --message="Configuring SSOwat..." --weight=1
-# Making the app public for curl
-ynh_permission_update --permission="main" --add="visitors"
-
-# Installation with curl
-ynh_script_progression --message="Finalizing installation..." --weight=1
-ynh_local_curl "/INSTALL_PATH" "key1=value1" "key2=value2" "key3=value3"
-
-# Remove the public access
-ynh_permission_update --permission="main" --remove="visitors"
 
 #=================================================
 # GENERIC FINALIZATION
 #=================================================
-# SETUP LOGROTATE
-#=================================================
-ynh_script_progression --message="Configuring log rotation..." --weight=1
-
-### `ynh_use_logrotate` is used to configure a logrotate configuration for the logs of this app.
-### Use this helper only if there is effectively a log file for this app.
-### If you're not using this helper:
-###		- Remove the section "BACKUP LOGROTATE" in the backup script
-###		- Remove also the section "REMOVE LOGROTATE CONFIGURATION" in the remove script
-###		- As well as the section "RESTORE THE LOGROTATE CONFIGURATION" in the restore script
-###		- And the section "SETUP LOGROTATE" in the upgrade script
-
-# Use logrotate to manage application logfile(s)
-ynh_use_logrotate
 
 #=================================================
 # INTEGRATE SERVICE IN YUNOHOST
@@ -362,46 +371,8 @@ ynh_script_progression --message="Starting a systemd service..." --weight=1
 ###		- And the section "STOP SYSTEMD SERVICE" and "START SYSTEMD SERVICE" in the change_url script
 
 # Start a systemd service
-ynh_systemd_action --service_name=$app --action="start" --log_path="/var/log/$app/$app.log"
+ynh_systemd_action --service_name=$app --action="start" 
 
-#=================================================
-# SETUP FAIL2BAN
-#=================================================
-ynh_script_progression --message="Configuring Fail2Ban..." --weight=1
-
-# Create a dedicated Fail2Ban config
-ynh_add_fail2ban_config --logpath="/var/log/nginx/${domain}-error.log" --failregex="Regex to match into the log for a failed login"
-
-#=================================================
-# SETUP SSOWAT
-#=================================================
-ynh_script_progression --message="Configuring permissions..." --weight=1
-
-# Make app public if necessary
-if [ $is_public -eq 1 ]
-then
-	# Everyone can access the app.
-	# The "main" permission is automatically created before the install script.
-	ynh_permission_update --permission="main" --add="visitors"
-fi
-
-### N.B. : the following extra permissions only make sense if your app
-### does have for example an admin interface or an API.
-
-# Only the admin can access the admin panel of the app (if the app has an admin panel)
-ynh_permission_create --permission="admin" --url="/admin" --allowed=$admin
-
-# Everyone can access the API part
-# We don't want to display the tile in the SSO so we put --show_tile="false"
-# And we don't want the YunoHost admin to be able to remove visitors group to this permission, so we put --protected="true"
-ynh_permission_create --permission="api" --url="/api" --allowed="visitors" --show_tile="false" --protected="true"
-
-#=================================================
-# RELOAD NGINX
-#=================================================
-ynh_script_progression --message="Reloading NGINX web server..." --weight=1
-
-ynh_systemd_action --service_name=nginx --action=reload
 
 #=================================================
 # END OF SCRIPT

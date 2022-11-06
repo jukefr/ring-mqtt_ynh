@@ -1,15 +1,17 @@
 [Unit]
-Description=Small description of the service
-After=network.target
+Description=Ring-MQTT daemon
+After=network.target mosquitto.target
 
 [Service]
 Type=simple
+Environment=NODE_ENV=production
+Environment="__YNH_NODE_LOAD_PATH__"
 User=__APP__
 Group=__APP__
 WorkingDirectory=__FINALPATH__/
-ExecStart=__FINALPATH__/script
-StandardOutput=append:/var/log/__APP__/__APP__.log
-StandardError=inherit
+ExecStart=__FINALPATH__/run.sh -f __APP__.yaml
+StandardOutput=syslog
+StandardError=syslog
 
 # Sandboxing options to harden security
 # Depending on specificities of your service/app, you may need to tweak these
@@ -18,7 +20,7 @@ StandardError=inherit
 NoNewPrivileges=yes
 PrivateTmp=yes
 PrivateDevices=yes
-RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 RestrictNamespaces=yes
 RestrictRealtime=yes
 DevicePolicy=closed
