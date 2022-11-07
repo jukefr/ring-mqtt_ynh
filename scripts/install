@@ -379,6 +379,21 @@ ynh_script_progression --message="Starting a systemd service..." --weight=1
 # Start a systemd service
 ynh_systemd_action --service_name=$app --action="start" 
 
+#=================================================
+# SEND A README FOR THE ADMIN
+#=================================================
+
+# Get main domain and buid the url of the admin panel of the app.
+admin_panel="http://yunohost.local:55123"
+
+echo "You need to login to the Ring API via the one-time __URL_TAG1__web ui__URL_TAG2__$admin_panel__URL_TAG3__.
+
+It will be disabled and the configuration saved once you are done, make sure to have two factor enabled on your Ring.com account.
+
+If you're facing an issue or want to improve this app, please open a new issue in this __URL_TAG1__project__URL_TAG2__https://github.com/YunoHost-Apps/ring-mqtt_ynh__URL_TAG3__." > mail_to_send
+
+ynh_send_readme_to_admin --app_message="mail_to_send" --recipients=root --type=restore
+
 
 #=================================================
 # END OF SCRIPT
