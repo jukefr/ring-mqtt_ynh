@@ -3,5 +3,5 @@
 set -o errexit
 set -o nounset
 
-__YNH_NPM__ start -- $@
+__YNH_NPM__ start
 
