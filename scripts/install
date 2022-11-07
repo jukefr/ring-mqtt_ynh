@@ -248,7 +248,7 @@ esac
 tar -xvf rtsp-simple-server*.tar.gz
 chmod +x rtsp-simple-server
 mv rtsp-simple-server /usr/local/bin
-rm LICENSE rtsp-simple-server.yml
+rm LICENSE rtsp-simple-server.yml rtsp-simple-server*.tar.gz
 
 #=================================================
 # ADD A CONFIGURATION

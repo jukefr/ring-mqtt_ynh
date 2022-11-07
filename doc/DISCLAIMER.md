@@ -1,12 +1,9 @@
-* Any known limitations, constrains or stuff not working, such as (but not limited to):
-    * requiring a full dedicated domain ?
-    * architectures not supported ?
-    * not-working single-sign on or LDAP integration ?
-    * the app requires an important amount of RAM / disk / .. to install or to work properly
-    * etc...
+!!! After installing the first time you need to open the 55123 port and use the web ui to configure your Ring API credentials
 
-* Other infos that people should be aware of, such as:
-    * any specific step to perform after installing (such as manually finishing the install, specific admin credentials, ...)
-    * how to configure / administrate the application if it ain't obvious
-    * upgrade process / specificities / things to be aware of ?
-    * security considerations ?
+```bash
+$ sudo yunohost firewall allow Both 55123
+
+# Go to http://yunohost.local:55123 and login, settings are saved automatically
+
+$ sudo yunohost firewall disallow Both 55123
+```
