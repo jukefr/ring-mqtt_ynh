@@ -6,7 +6,7 @@
     "en": "Ring devices to MQTT bridge.",
     "fr": "Pont MQTT pour peripheriques Ring."
   },
-  "version": "1.01~ynh1",
+  "version": "1.02~ynh1",
   "url": "https://github.com/tsightler/ring-mqtt",
   "upstream": {
     "license": "MIT",
