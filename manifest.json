@@ -44,8 +44,8 @@
         "name": "ringdisarm",
         "type": "string",
         "ask": {
-          "en": "Enter the code to disarm the alarm if you have one.",
-          "fr": "Entrez le code pour desarmer l'alarme si vous en avez une."
+          "en": "Enter the code to disarm the alarm if you have one",
+          "fr": "Entrez le code pour desarmer l'alarme si vous en avez une"
         },
         "example": "1234",
         "help": {
