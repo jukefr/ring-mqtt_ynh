@@ -392,7 +392,7 @@ It will be disabled and the configuration saved once you are done, make sure to 
 
 If you're facing an issue or want to improve this app, please open a new issue in this __URL_TAG1__project__URL_TAG2__https://github.com/YunoHost-Apps/ring-mqtt_ynh__URL_TAG3__." > mail_to_send
 
-ynh_send_readme_to_admin --app_message="mail_to_send" --recipients=root --type=restore
+ynh_send_readme_to_admin --app_message="mail_to_send" --recipients=root --type=install
 
 
 #=================================================
