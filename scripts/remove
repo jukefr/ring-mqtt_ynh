@@ -60,6 +60,8 @@ ynh_remove_nodejs
 # Remove metapackage and its dependencies
 ynh_remove_app_dependencies
 
+rm /usr/local/bin/rtsp-simple-server
+
 
 #=================================================
 # CLOSE A PORT
