@@ -22,11 +22,11 @@ The ring-mqtt project acts as a bridge between alarm, smart lighting and camera 
 See https://github.com/tsightler/ring-mqtt/wiki#supported-devices-and-features
 
 
-**Version incluse :** 1.0~ynh1
+**Version incluse :** 1.01~ynh1
 
 ## Captures d'écran
 
-![Capture d'écran de Ring-MQTT Bridge](./doc/screenshots/ring-mqtt-logo.png)
+![Capture d'écran de Ring-MQTT Bridge](./doc/screenshots/dashboard.png)
 
 ## Avertissements / informations importantes
 
