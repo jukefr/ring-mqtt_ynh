@@ -75,6 +75,7 @@ test ! -e "$final_path" || ynh_die --message="This path already contains a folde
 ynh_script_progression --message="Storing installation settings..." --weight=1
 
 ynh_app_setting_set --app=$app --key=final_path --value=$final_path
+ynh_app_setting_set --app=$app --key=log_path --value=$log_path
 ynh_app_setting_set --app=$app --key=mqtt_user --value=$mqtt_user
 ynh_app_setting_set --app=$app --key=mqtt_pass --value=$mqtt_pass
 ynh_app_setting_set --app=$app --key=mqtt_port --value=$mqtt_port

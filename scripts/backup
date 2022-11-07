@@ -31,7 +31,6 @@ app=$YNH_APP_INSTANCE_NAME
 final_path=$(ynh_app_setting_get --app=$app --key=final_path)
 domain=$(ynh_app_setting_get --app=$app --key=domain)
 log_path=$(ynh_app_setting_get --app=$app --key=log_path)
-etc_path=$(ynh_app_setting_get --app=$app --key=etc_path)
 
 #=================================================
 # DECLARE DATA AND CONF FILES TO BACKUP
@@ -60,8 +59,6 @@ ynh_backup --src_path="/etc/systemd/system/$app.service"
 #=================================================
 
 ynh_backup --src_path="$log_path"
-ynh_backup --src_path="$etc_path"
-
 
 
 #=================================================
