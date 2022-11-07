@@ -384,9 +384,8 @@ ynh_systemd_action --service_name=$app --action="start"
 #=================================================
 
 # Get main domain and buid the url of the admin panel of the app.
-admin_panel="http://yunohost.local:55123"
 
-echo "You need to login to the Ring API via the one-time __URL_TAG1__web ui__URL_TAG2__$admin_panel__URL_TAG3__.
+echo "You need to login to the Ring API via the one-time __URL_TAG1__web ui__URL_TAG2__http://yunohost.local:55123__URL_TAG3__.
 
 It will be disabled and the configuration saved once you are done, make sure to have two factor enabled on your Ring.com account.
 
